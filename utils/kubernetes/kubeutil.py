@@ -16,7 +16,7 @@ from utils.checkfiles import get_conf_path
 from utils.http import retrieve_json
 from utils.singleton import Singleton
 from utils.dockerutil import DockerUtil
-from utils.kubernetes import PodServiceMapper, KubeEventRetriever
+from utils.kubernetes import LeaderElector, KubeEventRetriever, PodServiceMapper
 
 import requests
 
@@ -107,6 +107,11 @@ class KubeUtil:
             self.kubernetes_api_root_url = 'https://%s:%s' % (master_host, master_port)
 
         self.kubernetes_api_url = '%s/api/v1' % self.kubernetes_api_root_url
+
+        # leader status triggers event collection
+        self.is_leader = False
+        if os.environ('DD_LEADER_CANDIDATE'):
+            self.is_leader = LeaderElector(self)
 
         # kubelet
         try:
